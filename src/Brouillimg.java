@@ -130,7 +130,7 @@ public class Brouillimg {
 
         int[] scrambleTable = new int[size];
 
-        for (int i = 0; i < size; i++) scrambleTable[i] = i;
+        for (int i = 0; i < size; i++) scrambleTable[i] = scrambledId(i, size, key);
 
         return scrambleTable;
 
@@ -182,9 +182,11 @@ public class Brouillimg {
      */
 
     public static int scrambledId(int id, int size, int key) {
+        int r = key % 10;
+        int s = key / 10;
 
+        id = (r + (2*s+1) * id) % size;
         return id;
-
     }
 
 }
