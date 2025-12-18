@@ -18,9 +18,9 @@ public class Brouillimg {
 
     public static void main(String[] args) throws IOException {
 
-        if (args.length < 2) {
+        if (args.length < 3) {
 
-            System.err.println("Usage: java Brouillimg <image_claire> <clé> [image_sortie]");
+            System.err.println("Usage: java Brouillimg <image_claire> <clé> <scramble (0), unscramble(1)> [image_sortie]");
 
             System.exit(1);
 
@@ -28,11 +28,12 @@ public class Brouillimg {
 
         String inPath = args[0];
 
-        String outPath = (args.length >= 3) ? args[2] : "out.png";
+        String outPath = (args.length >= 4) ? args[3] : "out.png";
 
         // Masque 0x7FFF pour garantir que la clé ne dépasse pas les 15 bits
 
         int key = Integer.parseInt(args[1]) & 0x7FFF ;
+        int choix = Integer.parseInt(args[2]);
 
 
         BufferedImage inputImage = ImageIO.read(new File(inPath));
@@ -59,9 +60,16 @@ public class Brouillimg {
         int[] perm = generatePermutation(height, key);
 
 
-        BufferedImage scrambledImage = scrambleLines(inputImage, perm);
+        if (choix == 0) {
+            BufferedImage scrambledImage = scrambleLines(inputImage, perm);
 
-        ImageIO.write(scrambledImage, "png", new File(outPath));
+            ImageIO.write(scrambledImage, "png", new File(outPath));
+
+        } else {
+            BufferedImage unscrambledImage = unscrambleLines(inputImage, perm);
+
+            ImageIO.write(unscrambledImage, "png", new File(outPath));
+        }
 
         System.out.println("Image écrite: " + outPath);
 
@@ -174,6 +182,31 @@ public class Brouillimg {
     }
 
 
+    public static BufferedImage unscrambleLines(BufferedImage inputImg, int[] perm){
+
+        int width = inputImg.getWidth();
+
+        int height = inputImg.getHeight();
+
+        if (perm.length != height) throw new IllegalArgumentException("Taille d'image <> taille permutation");
+
+
+        BufferedImage out = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        for (int y = 0; y < height; y++) {
+
+            int newY = perm[y];
+
+            for (int x = 0; x < width; x++) {
+
+                out.setRGB(x, y, inputImg.getRGB(x, newY));
+            }
+        }
+        return out;
+
+    }
+
+
     /**
 
      * Renvoie la position de la ligne id dans l'image brouillée.
@@ -189,8 +222,8 @@ public class Brouillimg {
      */
 
     public static int scrambledId(int id, int size, int key) {
-        int r = key % 10;
-        int s = key / 10;
+        int s = key & 0x7F;
+        int r = (key >> 6) & 0xFF;
 
         id = (r + (2*s+1) * id) % size;
         return id;
