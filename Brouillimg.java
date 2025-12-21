@@ -15,6 +15,8 @@ import java.util.stream.IntStream;*/
 public class Brouillimg {
 
     public static void main(String[] args) throws IOException {
+        /*test breakKey euclidian a metre en commentaire aprés les test*/
+        runImageTest();
 
         if (args.length < 2) {
 
@@ -56,6 +58,7 @@ public class Brouillimg {
         // int[][] inputImageGL = rgb2gl(inputImage);
 
         int[] perm = generatePermutation(height, key);
+
 
         switch (choix) {
             case 0:
@@ -433,5 +436,79 @@ public class Brouillimg {
 
         return PBestImg;
     }
+  /**
+   * méthode qui permet de verifié si deux image son les méme
+   * nécéssaire pour les test
+   * @param img1 image d'origine
+   * @param img2 une deuxieme image
+   * @return true or false si les image corresponde ou pas
+   * */
+    public static boolean IageIdentique(BufferedImage img1, BufferedImage img2) {
+
+        if (img1.getWidth() != img2.getWidth() ||
+                img1.getHeight() != img2.getHeight()) {
+            return false;
+        }
+
+        for (int y = 0; y < img1.getHeight(); y++) {
+            for (int x = 0; x < img1.getWidth(); x++) {
+                if (img1.getRGB(x, y) != img2.getRGB(x, y)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    /** methode de qui fait les test
+     * @return pas mal si les image corresponde pas bon sinon
+     * */
+    public static void runImageTest() throws IOException {
+
+
+        String[] inputImages = {
+                "image/imageClair/img.png",
+                "image/imageClair/img2.png",
+                "image/imageClair/img3.png"
+        };
+        String[] outputImages = {
+                "image/imageBroulliée/img2_921.png",
+                "image/imageBroulliée/img2_1231.png",
+                "image/imageBroulliée/img_488.png"
+        };
+
+        int[] secretKeys = {5678, 348, 7638};
+
+        for (int i = 0; i < inputImages.length; i++) {
+
+            System.out.println("Test image : " + inputImages[i]);
+
+
+            BufferedImage original = ImageIO.read(new File(inputImages[i]));
+
+            if (original == null) {
+                throw new IOException("Impossible de lire " + inputImages[i]);
+            }
+
+
+            int[] perm = generatePermutation(original.getHeight(), secretKeys[i]);
+            BufferedImage scrambled = scrambleLines(original, perm);
+
+
+            BufferedImage déchifrée = breakKey(scrambled,0);
+
+
+            ImageIO.write(déchifrée, "png", new File(outputImages[i]));
+
+
+            boolean identique = IageIdentique(original, déchifrée);
+
+            System.out.println("Résultat : " + (identique ? "pas mal" : "pas bon"));
+            System.out.println("Image écrite : " + outputImages[i]);
+        }
+
+
+        System.out.println("fin du test jarvis OUT");
+    }
+
 
 }
