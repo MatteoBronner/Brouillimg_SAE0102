@@ -294,7 +294,7 @@ public class Brouillimg {
         double sumYY = 0;
         double sumXY = 0;
 
-        for (int i = 0; i < len; ++i) {
+        for (int i = 0; i < len; i += 4) {
             double difX = line1[i] - moyX;
             double difY = line2[i] - moyY;
 
@@ -330,8 +330,13 @@ public class Brouillimg {
         int height = imageGL.length;
         double score = 0.0;
 
-        for (int y = 0; y < height - 1; y += 2) {
+        for (int y = 0; y < height - 1; y++) {
             score += pearsonCorrelation(imageGL[y], imageGL[y + 1]);
+
+            if (score + (height - y - 1) <= bestScore) {
+                return Double.NEGATIVE_INFINITY;
+            }
+
         }
 
         return score;
@@ -347,6 +352,22 @@ public class Brouillimg {
 
         for (int y = 0; y < height; y++) {
             outGL[y] = inputGL[perm[y]];
+        }
+        return outGL;
+    }
+
+    public static int[][] unscrambleLinesGLPearson(int[][] inputGL, int[] perm) {
+
+        int height = inputGL.length;
+        int[][] outGL = new int[height][];
+
+        int[] inv = new int[height];
+        for (int i = 0; i < height; i++) {
+            inv[perm[i]] = i;
+        }
+
+        for (int y = 0; y < height; y++) {
+            outGL[y] = inputGL[inv[y]];
         }
         return outGL;
     }
@@ -377,9 +398,8 @@ public class Brouillimg {
 
             int[] permutationtest = generatePermutation(height, testkey);
 
-            int[][] candidaGl = unscrambleLinesGL(ImageGL, permutationtest);
-
             if (choix == 0) {
+                int[][] candidaGl = unscrambleLinesGL(ImageGL, permutationtest);
                 double score = scoreEuclidean(candidaGl, bestScore);
 
                 if (score < bestScore) {
@@ -388,13 +408,13 @@ public class Brouillimg {
                 }
 
             } else {
+                int[][] candidaGl = unscrambleLinesGLPearson(ImageGL, permutationtest);
                 double score = scorePearson(candidaGl, bestScore);
 
                 if (score > bestScore) {
                     bestScore = score;
                     bestKey = testkey;
 
-                    System.out.println(bestKey + " - (" + bestScore + ") ");
                 }
             }
         }
