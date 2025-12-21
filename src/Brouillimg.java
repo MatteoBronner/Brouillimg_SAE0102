@@ -248,49 +248,73 @@ public class Brouillimg {
      * @param imageGL l'image en niveaux de gris
      * @return score euclidien de l'image entrée
      */
-    public static double scoreEuclidean(int[][] imageGL) {
+    public static double scoreEuclidean(int[][] imageGL, double bestScore) {
         int height = imageGL.length;
         double score = 0.0;
 
         for (int y = 0; y < height - 1; y++) {
             score += euclideanDistance(imageGL[y], imageGL[y + 1]);
+            if(score>bestScore){
+                return Double.MAX_VALUE;
+            }
         }
         return score;
     }
+    /**
+     * Applique une permutation inverse aux lignes d'une image en niveaux de gris
+     */
+    public static int[][] unscrambleLinesGL(int[][] inputGL, int[] perm) {
+
+        int height = inputGL.length;
+        int[][] outGL = new int[height][];
+
+        for (int y = 0; y < height; y++) {
+            outGL[y] = inputGL[perm[y]];
+        }
+        return outGL;
+    }
+
 
     /**
      * Teste TOUTE les clés possibles et retourne l'image déchiffrée qui correspondant au meilleur score euclidien.
 
-     * @param scrambledImg image brouillée
+     * @param inputImage image brouillée
      * @return image la plus probable
      */
-    public static BufferedImage breakKey(BufferedImage scrambledImg) {
+    public static BufferedImage breakKey(BufferedImage inputImage) {
 
-        int height = scrambledImg.getHeight();
+        int height = inputImage.getHeight();
+        int width  = inputImage.getWidth();
+
+        int[][] ImageGL = rgb2gl(inputImage);
 
         double bestScore = Double.MAX_VALUE;
         int bestKey = -1;
-        BufferedImage bestImage = null;
+        int[][] bestImagegl = null;
 
         for (int testkey = 0; testkey < 32768; testkey++) {
 
             int[] permutationtest = generatePermutation(height, testkey);
-            BufferedImage candida = unscrambleLines(scrambledImg, permutationtest);
 
-            int[][] gl = rgb2gl(candida);
-            double score = scoreEuclidean(gl);
+            int[][] candidaGl = unscrambleLinesGL(ImageGL, permutationtest);
+
+            double score = scoreEuclidean(candidaGl,bestScore);
 
             if (score < bestScore) {
                 bestScore = score;
                 bestKey = testkey;
-                bestImage = candida;
+                bestImagegl = candidaGl;
             }
         }
 
         System.out.println("Meilleure clé trouvée : " + bestKey);
         System.out.println("Score euclidien : " + bestScore);
 
-        return bestImage;
+        int[] LaBonnePermutation = generatePermutation(height, bestKey);
+
+        BufferedImage PBestImg = unscrambleLines(inputImage, LaBonnePermutation);
+
+        return PBestImg;
     }
 
 
