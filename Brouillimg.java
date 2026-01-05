@@ -16,7 +16,7 @@ public class Brouillimg {
 
     public static void main(String[] args) throws IOException {
         /*test breakKey euclidian a metre en commentaire aprés les test*/
-        runImageTest();
+        //runImageTest();
 
         if (args.length < 2) {
 
@@ -76,17 +76,36 @@ public class Brouillimg {
                 break;
 
             case 2:
+                Profiler.init();
+
                 System.out.println("decryptage (distance euclidienne)");
 
-                BufferedImage breakKeyEu = breakKey(inputImage, 0);
-                ImageIO.write(breakKeyEu, "png", new File(outPath));
+                final BufferedImage[] result = new BufferedImage[1];
+
+                Profiler.analyse(() -> {
+                    result[0] = breakKey(inputImage, 0);
+                });
+
+                ImageIO.write(result[0], "png", new File(outPath));
+
+                Profiler.getGlobalTime();
                 break;
 
+
             case 3:
+                Profiler.init();
+
                 System.out.println("decryptage (correlation de Pearson)");
 
-                BufferedImage breakKeyPe = breakKey(inputImage, 1);
-                ImageIO.write(breakKeyPe, "png", new File(outPath));
+                final BufferedImage[] resultPe = new BufferedImage[1];
+
+                Profiler.analyse(() -> {
+                    resultPe[0] = breakKey(inputImage, 1);
+                });
+
+                ImageIO.write(resultPe[0], "png", new File(outPath));
+
+                Profiler.getGlobalTime();
                 break;
 
             default:
@@ -218,6 +237,28 @@ public class Brouillimg {
 
     }
 
+    public static BufferedImage unscrambleLinesPearson(
+            BufferedImage inputImg, int[] perm) {
+
+        int width = inputImg.getWidth();
+        int height = inputImg.getHeight();
+
+        BufferedImage out = new BufferedImage(
+                width, height, BufferedImage.TYPE_INT_ARGB);
+
+        int[] inv = new int[height];
+        for (int i = 0; i < height; i++) {
+            inv[perm[i]] = i;
+        }
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                out.setRGB(x, y, inputImg.getRGB(x, inv[y]));
+            }
+        }
+        return out;
+    }
+
     /**
      * Renvoie la position de la ligne id dans l'image brouillée.
      *
@@ -258,7 +299,7 @@ public class Brouillimg {
 
     /**
      * Calcule le score euclidien d'une image.
-     * 
+     *
      * @param imageGL l'image en niveaux de gris
      * @return score euclidien de l'image entrée
      */
@@ -325,7 +366,7 @@ public class Brouillimg {
 
     /**
      * Calcule le score Pearson d'une image.
-     * 
+     *
      * @param imageGL l'image en niveaux de gris
      * @return score Pearson de l'image entrée
      */
@@ -378,7 +419,7 @@ public class Brouillimg {
     /**
      * Teste TOUTE les clés possibles et retourne l'image déchiffrée qui
      * correspondant au meilleur score euclidien.
-     * 
+     *
      * @param inputImage image brouillée
      * @return image la plus probable
      */
@@ -432,17 +473,22 @@ public class Brouillimg {
 
         int[] LaBonnePermutation = generatePermutation(height, bestKey);
 
-        BufferedImage PBestImg = unscrambleLines(inputImage, LaBonnePermutation);
+        BufferedImage PBestImg;
+        if (choix == 0) {
+            PBestImg = unscrambleLines(inputImage, LaBonnePermutation);
+        } else {
+            PBestImg = unscrambleLinesPearson(inputImage, LaBonnePermutation);
+        }
 
         return PBestImg;
     }
-  /**
-   * méthode qui permet de verifié si deux image son les méme
-   * nécéssaire pour les test
-   * @param img1 image d'origine
-   * @param img2 une deuxieme image
-   * @return true or false si les image corresponde ou pas
-   * */
+    /**
+     * méthode qui permet de verifié si deux image son les méme
+     * nécéssaire pour les test
+     * @param img1 image d'origine
+     * @param img2 une deuxieme image
+     * @return true or false si les image corresponde ou pas
+     * */
     public static boolean IageIdentique(BufferedImage img1, BufferedImage img2) {
 
         if (img1.getWidth() != img2.getWidth() ||
